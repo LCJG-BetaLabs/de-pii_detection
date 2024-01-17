@@ -133,19 +133,47 @@ unpivoted_stats = unpivoted_df.groupBy("table_catalog", "table_schema", "table_n
 
 # COMMAND ----------
 
-from presidio_analyzer import PatternRecognizer
+from presidio_analyzer import PatternRecognizer, EntityRecognizer
 person_recognizer = PatternRecognizer(supported_entity="PERSON",
-                                      deny_list=["Bethan Gray","LAB SERIES","TATEOSSIAN", "PROTECTOR DAILY", "123", "456", "789"])
+                                      
+                                      deny_list=["Bethan Gray","LAB SERIES","TATEOSSIAN", "PROTECTOR DAILY", "123", "456", "789"]
+                                      )
+
+entity_recognizer = EntityRecognizer(supported_entities='PERSON',
+                                     supported_language='en',
+                                     )
 
 
 # COMMAND ----------
 
 registry = RecognizerRegistry()
 registry.load_predefined_recognizers()
+registry.remove_recognizer('IbanRecognizer')
+registry.remove_recognizer('AuAbnRecognizer')
+registry.remove_recognizer('UsLicenseRecognizer')
+registry.remove_recognizer('UsBankRecognizer')
+registry.remove_recognizer('UsSsnRecognizer')
+registry.remove_recognizer('AuTfnRecognizer')
+registry.remove_recognizer('UsItinRecognizer')
+registry.remove_recognizer('AuMedicareRecognizer')
+registry.remove_recognizer('AuAcnRecognizer')
+registry.remove_recognizer('UsPassportRecognizer')
+registry.remove_recognizer('NhsRecognizer')
+registry.remove_recognizer('SgFinRecognizer')
+
 # Add the recognizer to the existing list of recognizers
 registry.add_recognizer(person_recognizer)
+registry.add_recognizer(entity_recognizer)
 # Define the analyzer, and add custom matchers if needed
 analyzer = AnalyzerEngine(default_score_threshold= 0.1, registry=registry)
+
+# COMMAND ----------
+
+analyzer.get_recognizers()
+
+# COMMAND ----------
+
+
 
 # broadcast the engines to the cluster nodes
 broadcasted_analyzer = sc.broadcast(analyzer)
@@ -213,7 +241,7 @@ summarised_detections = (
     .join(unpivoted_stats, ["table_catalog", "table_schema", "table_name", "column_name"])
     .withColumn("score", col("sum_score") / col("sampled_rows_count"))
     .select("table_catalog", "table_schema", "table_name", "column_name", "entity_type", "score", "max_score")
-    .filter('max_score > 0.5 AND score < 0.85 AND score > 0.1')
+    .filter('max_score > 0.5 AND score < 0.8 AND score > 0.1')
     .orderBy('table_name','column_name', 'entity_type')
 )
 

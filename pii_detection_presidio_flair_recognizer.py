@@ -301,13 +301,6 @@ unpivoted_stats = unpivoted_df.groupBy("table_catalog", "table_schema", "table_n
 
 # COMMAND ----------
 
-from presidio_analyzer import PatternRecognizer
-person_recognizer = PatternRecognizer(supported_entity="PERSON",
-                                      deny_list=["Bethan Gray","LAB SERIES","TATEOSSIAN", "PROTECTOR DAILY", "123", "456", "789"])
-
-
-# COMMAND ----------
-
 flair_recognizer = (
         FlairRecognizer()
     )  # This would download a very large (+2GB) model on the first run
